@@ -125,7 +125,7 @@ def getMsgs(url)
         filename = 'upload/' + (image.hash + 2**31).to_s + File.extname(image)
         msg[:image_big] = filename
         msg[:image] = image.gsub('big', 'small')
-        #download(image, filename)
+        download(image, filename)
       end
       res << msg
     end
