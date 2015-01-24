@@ -1,3 +1,6 @@
+#!/bin/env ruby
+# encoding: utf-8
+
 require 'nokogiri'
 require 'open-uri'
 require 'json'
@@ -58,6 +61,7 @@ URLS = {
   "Одежда, обувь и аксессуары"=> "http://www.chepetsk.ru/do/?id=clothes"
 }
 }
+
 class Struct
   def to_map
     map = Hash.new
@@ -107,25 +111,23 @@ def getMsgs(url)
   printf("\t%s: ",url)
   doc = Nokogiri::HTML(open(url))
   begin
-    doc.css(".container table table[bgcolor='#CECFCE']").each do |item|
-      a = item.css('.cont')
-      if a.size > 3
-        msg = Item.new
-        msg[:title] = item.css('.doska1').text
-        msg[:text] = item.css('.txt2').text
-        msg[:author] = a[0].text[7..-1]   #отрезаем в начале строки "Автор: "
-        msg[:phone] = a[2].text[13..-1]   #отрезаем "Телефон: "
-        msg[:has_email] = !a[2].text.strip.empty?
-        msg[:date] = a[3].text[20..26]
-        image = item.css('.img a img')[0]['src'] rescue nil
-        if image != nil
-          filename = 'upload/' + (image.hash + 2**31).to_s + File.extname(image)
-          msg[:image] = filename
-          msg[:image_big] = image.gsub('small','big')
-          download(image, filename)
-        end
-        res << msg
+    doc.at_css('#mainer > table  > tr > td > table  > tr:nth-child(2) > td').css('table > tr > td > table').each do |table|
+      rows = table.css('tr')
+
+      msg = Item.new
+      msg[:title] = 
+      msg[:text] = rows[0].css('td')[1].text
+      msg[:phone] = rows[1].css('td b').text
+      msg[:author] = rows[1].at_css('td').text.gsub(msg[:phone],'')
+      msg[:date] = rows[1].css('td')[1].text.split('—')[1]
+      image = rows[0].css('td')[2].at_css('a')['href'] rescue nil
+      if image != nil
+        filename = 'upload/' + (image.hash + 2**31).to_s + File.extname(image)
+        msg[:image_big] = filename
+        msg[:image] = image.gsub('big', 'small')
+        #download(image, filename)
       end
+      res << msg
     end
   rescue Exception => e
     puts "FAIL\n#{ e.message }"
