@@ -74,7 +74,7 @@ class Struct
   end
 end
 
-class Item < Struct.new(:title, :text, :phone, :has_email, :author, :image, :image_big, :date); end
+class Item < Struct.new(:text, :phone, :has_email, :author, :image, :image_big, :date); end
 
 def main(fout)
   puts "Start"
@@ -115,7 +115,6 @@ def getMsgs(url)
       rows = table.css('tr')
 
       msg = Item.new
-      msg[:title] = 
       msg[:text] = rows[0].css('td')[1].text
       msg[:phone] = rows[1].css('td b').text
       msg[:author] = rows[1].at_css('td').text.gsub(msg[:phone],'')
@@ -147,8 +146,3 @@ def download(url, name)
 end
 
 main(File.open("out.json","w"))
-#fout = File.open("out.json","w")
-#msg = getMsgs("http://www.chepetsk.ru/index.php?do/&id=kids&sid=oio&page=10")
-#puts msg
-#fout.puts JSON.pretty_generate(msg)
-#fout.close
