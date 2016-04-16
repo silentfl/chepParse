@@ -4,62 +4,72 @@
 require 'nokogiri'
 require 'open-uri'
 require 'json'
+require 'parallel'
 
 URLS = {
-  "Недвижимость"=> { 
-  "Покупка"=> "http://www.chepetsk.ru/do/?id=realty&sid=realtybuy",
-  "Продажа"=> "http://www.chepetsk.ru/do/?id=realty&sid=realtysell",
-  "Обмен"=> "http://www.chepetsk.ru/do/?id=realty&sid=realtyxch",
-  "Аренда жилья"=> "http://www.chepetsk.ru/do/?id=realty&sid=arenda",
-  "Гаражи и сады"=> "http://www.chepetsk.ru/do/?id=realty&sid=srealty",
-  "Коммерческая"=> "http://www.chepetsk.ru/do/?id=realty&sid=commerc"
-},
-  "Работа"=> {
-  "Требуются"=> "http://www.chepetsk.ru/do/?id=job&sid=sjob",
-  "Ищу работу"=> "http://www.chepetsk.ru/do/?id=job&sid=fjob"
-},
-  "Даром"=> {
-  "Отдам"=> "http://www.chepetsk.ru/do/?id=darom&sid=otdam",
-  "Приму"=> "http://www.chepetsk.ru/do/?id=darom&sid=primu"
-},
-  "Техника"=> {
-  "Бытовая"=> "http://www.chepetsk.ru/do/?id=tech&sid=byt",
-  "Аудио, видео, фото"=> "http://www.chepetsk.ru/do/?id=tech&sid=av",
-  "Компьютеры"=> "http://www.chepetsk.ru/do/?id=tech&sid=comp",
-  "Мобильные устройства"=> "http://www.chepetsk.ru/do/?id=tech&sid=mobil"
-},
-  "Все для дома"=> {
-  "Все для дома"=> "http://www.chepetsk.ru/do/?id=dom"
-},
-  "Разное куплю"=> {
-  "Разное куплю"=> "http://www.chepetsk.ru/do/?id=buy"
-},
-  "Автомобили"=> {
-  "Запчасти"=> "http://www.chepetsk.ru/do/?id=auto&sid=autozap",
-  "Иномарки"=> "http://www.chepetsk.ru/do/?id=auto&sid=inauto",
-  "Отечественные"=> "http://www.chepetsk.ru/do/?id=auto&sid=rusauto"
-},
-  "Животные"=> {
-  "Животные"=> "http://www.chepetsk.ru/do/?id=pets"
-},
-  "Разное продам"=> {
-  "Разное продам"=> "http://www.chepetsk.ru/do/?id=other"
-},
-  "Находки и потери"=> {
-  "Находки и потери"=> "http://www.chepetsk.ru/do/?id=nahodki"
-},
-  "Детское"=> {
-  "Одежда и обувь"=> "http://www.chepetsk.ru/do/?id=kids&sid=oio",
-  "Коляски"=> "http://www.chepetsk.ru/do/?id=kids&sid=kolyaski",
-  "Питание"=> "http://www.chepetsk.ru/do/?id=kids&sid=pitanie",
-  "Разное"=> "http://www.chepetsk.ru/do/?id=kids&sid=raznoe"
-},
-  "Услуги"=> {
-  "Услуги"=> "http://www.chepetsk.ru/do/?id=uslugi"
-},
-  "Одежда, обувь и аксессуары"=> {
-  "Одежда, обувь и аксессуары"=> "http://www.chepetsk.ru/do/?id=clothes"
-}
+  "Недвижимость" => {
+    "Квартиры" => "http://www.chepetsk.ru/do/?id=realty&sid=realtysell",
+    "Аренда жилья" => "http://www.chepetsk.ru/do/?id=realty&sid=arenda",
+    "Дома, сады, земля" => "http://www.chepetsk.ru/do/?id=realty&sid=doma",
+    "Гаражи" => "http://www.chepetsk.ru/do/?id=realty&sid=srealty",
+    "Покупка" => "http://www.chepetsk.ru/do/?id=realty&sid=realtybuy",
+    "Обмен" => "http://www.chepetsk.ru/do/?id=realty&sid=realtyxch",
+    "Коммерческая" => "http://www.chepetsk.ru/do/?id=realty&sid=commerc"
+  },
+  "Работа" => {
+    "Требуются" => "http://www.chepetsk.ru/do/?id=job&sid=sjob",
+    "Ищу работу" => "http://www.chepetsk.ru/do/?id=job&sid=fjob"
+  },
+  "Даром" => {
+    "Отдам" => "http://www.chepetsk.ru/do/?id=darom&sid=otdam",
+    "Приму" => "http://www.chepetsk.ru/do/?id=darom&sid=primu"
+  },
+  "Техника" => {
+    "Бытовая" => "http://www.chepetsk.ru/do/?id=tech&sid=byt",
+    "Аудио, видео, фото" => "http://www.chepetsk.ru/do/?id=tech&sid=av",
+    "Компьютеры" => "http://www.chepetsk.ru/do/?id=tech&sid=comp",
+    "Мобильные устройства" => "http://www.chepetsk.ru/do/?id=tech&sid=mobil",
+    "Инструмент" => "http://www.chepetsk.ru/do/?id=tech&sid=instr"
+  },
+  "Мебель и все для дома" => {
+    "Мебель и все для дома" => "http://www.chepetsk.ru/do/?id=dom"
+  },
+  "Разное куплю" => { "Разное куплю" => "http://www.chepetsk.ru/do/?id=buy"
+  },
+  "Автомобили" => {
+    "Иномарки" => "http://www.chepetsk.ru/do/?id=auto&sid=inauto",
+    "Отечественные" => "http://www.chepetsk.ru/do/?id=auto&sid=rusauto",
+    "Запчасти" => "http://www.chepetsk.ru/do/?id=auto&sid=autozap",
+    "Шины и диски" => "http://www.chepetsk.ru/do/?id=auto&sid=sd"
+  },
+  "Одежда, обувь и аксессуары" => {
+    "Одежда" => "http://www.chepetsk.ru/do/?id=clothes&sid=od",
+    "Обувь" => "http://www.chepetsk.ru/do/?id=clothes&sid=obuv",
+    "Аксессуары" => "http://www.chepetsk.ru/do/?id=clothes&sid=acs",
+    "Для беременных" => "http://www.chepetsk.ru/do/?id=clothes&sid=ber"
+  },
+  "Разное продам" => {
+    "Разное продам"=> "http://www.chepetsk.ru/do/?id=other"
+  },
+  "Находки и потери" => { 
+    "Находки и потери" => "http://www.chepetsk.ru/do/?id=nahodki" 
+  },
+  "Детское" => {
+    "Одежда" => "http://www.chepetsk.ru/do/?id=kids&sid=ode",
+    "Обувь" => "http://www.chepetsk.ru/do/?id=kids&sid=obu",
+    "Коляски" => "http://www.chepetsk.ru/do/?id=kids&sid=kolyaski",
+    "Питание" => "http://www.chepetsk.ru/do/?id=kids&sid=pitanie",
+    "Разное" => "http://www.chepetsk.ru/do/?id=kids&sid=raznoe"
+  },
+  "Услуги" => {
+    "Транспорт" => "http://www.chepetsk.ru/do/?id=uslugi&sid=transp",
+    "Ремонт в квартире" => "http://www.chepetsk.ru/do/?id=uslugi&sid=remont",
+    "Красота" => "http://www.chepetsk.ru/do/?id=uslugi&sid=krasota",
+    "Разное" => "http://www.chepetsk.ru/do/?id=uslugi&sid=ect"
+  },
+  "Животные"        => {"Животные"       => "http://www.chepetsk.ru/do/?id=pets"},
+  "Стройматериалы"  => {"Стройматериалы" => "http://www.chepetsk.ru/do/?id=stroymat"},
+  "Спорттовары"     => {"Спорттовары"    => "http://www.chepetsk.ru/do/?id=sport"}
 }
 
 class Struct
@@ -78,13 +88,14 @@ class Item < Struct.new(:text, :phone, :has_email, :author, :image, :image_big, 
 
 def main(fout)
   puts "Start"
-  messages = {}
-  URLS.each do |part, values|
+  messages = Parallel.map(URLS, in_processes: 8) do |part, values|
     p = {}
     values.each do |item, url|
       p[item] = getMessages(url) 
+      #fout.puts JSON.pretty_generate(p)
+      #fout.flush
     end
-    messages[part] = p
+    { part => p }
   end
   fout.puts JSON.pretty_generate(messages)
   fout.close
