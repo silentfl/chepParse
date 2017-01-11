@@ -87,18 +87,6 @@ end
 class Item < Struct.new(:text, :phone, :has_email, :author, :image, :image_big, :date); end
 
 def main(fout)
-  puts "Start"
-  messages = Parallel.map(URLS, in_processes: 8) do |part, values|
-    p = {}
-    values.each do |item, url|
-      p[item] = getMessages(url) 
-      #fout.puts JSON.pretty_generate(p)
-      #fout.flush
-    end
-    { part => p }
-  end
-  fout.puts JSON.pretty_generate(messages)
-  fout.close
 end
 
 def getMessages(url)
@@ -114,7 +102,10 @@ def getMessages(url)
   (1..count).each do |page|
     msgs += getMsgs(url + "&page=#{page}")
   end
-  msgs
+
+  return msgs
+rescue StandardError => e
+  puts "Error: #{e.message}"
 end
 
 def getMsgs(url)
@@ -149,11 +140,22 @@ end
 
 #загружает файл по урлу url, сохраняет под именем name
 def download(url, name)
-  begin
-    IO.write(name, open(url).read)
-  rescue Exception => e 
-    puts "Fail download image #{url}:\n#{e.message}"
-  end
+  IO.write(name, open(url).read)
+rescue StandardError => e 
+  puts "Fail download image #{url}:\n#{e.message}"
 end
 
-main(File.open("out.json","w"))
+fout = File.open("out.json","w")
+
+puts "Start"
+messages = Parallel.map(URLS, in_processes: 8) do |part, values|
+  p = {}
+  values.each do |item, url|
+    p[item] = getMessages(url) rescue nil
+    #fout.puts JSON.pretty_generate(p)
+    #fout.flush
+  end
+  { part => p }
+end
+fout.puts JSON.pretty_generate(messages)
+fout.close
